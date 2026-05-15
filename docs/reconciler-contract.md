@@ -10,6 +10,8 @@ source with one OpenClaw runtime target.
 - Emit machine-readable output with `--json`.
 - Include source metadata in every result.
 - Include target metadata in every result.
+- Include a target host label in every result. Use `--host`, `OPENCLAW_HOST`,
+  or the local hostname default.
 - Include the full file plan and changed-file subset.
 - Fail before mutating when the source is incomplete or invalid.
 - Make deletion opt-in. A caller must pass an explicit prune/delete option.

@@ -33,6 +33,10 @@ export function normalizeAgentId(value: string | undefined): string {
   return normalized;
 }
 
+export function resolveHostId(value: string | undefined, env: NodeJS.ProcessEnv): string {
+  return optionalString(value) ?? optionalString(env.OPENCLAW_HOST) ?? os.hostname();
+}
+
 export async function pathExists(filePath: string): Promise<boolean> {
   try {
     await fs.access(filePath);

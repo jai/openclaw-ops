@@ -37,9 +37,11 @@ describe("prompt reconciler", () => {
     const defaults = resolvePromptReconcileDefaults({
       agentId: "argus",
       runtimeId: "example-runtime",
+      hostId: "example-host",
       env: { ...process.env, HOME: tempRoot },
     });
 
+    expect(defaults.hostId).toBe("example-host");
     expect(defaults.workspaceDir).toBe(path.join(tempRoot, ".openclaw", "workspace-argus"));
     expect(defaults.supportDir).toBe(
       path.join(tempRoot, ".openclaw", "runtime", "example-runtime-argus"),
@@ -67,12 +69,14 @@ describe("prompt reconciler", () => {
 
     const result = await reconcilePrompts({
       sourceDir,
+      hostId: "example-host",
       runtimeId: "example-runtime",
       workspaceDir,
       supportDir,
     });
 
     expect(result.applied).toBe(false);
+    expect(result.target.hostId).toBe("example-host");
     expect(
       result.changed.map((file) => `${file.action}:${file.kind}:${file.relativePath}`),
     ).toEqual([

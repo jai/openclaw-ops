@@ -12,6 +12,7 @@ host adapter when needed.
 
 - `--source-dir`: desired cron artifact directory
 - `--target-dir`: target cron artifact directory
+- `--host`: target host label for audit output
 - `--only <path>`: limit to one source-relative artifact; repeat as needed
 - `--prune`: delete target files absent from source when not using `--only`
 - `--apply`: write the plan
@@ -23,6 +24,7 @@ Dry-run all cron artifacts:
 
 ```bash
 openclaw-ops crons reconcile \
+  --host example-host \
   --source-dir ./test/fixtures/cron-source \
   --target-dir ./tmp/crons
 ```
@@ -31,6 +33,7 @@ Hard-scope to one artifact:
 
 ```bash
 openclaw-ops crons reconcile \
+  --host example-host \
   --source-dir ./test/fixtures/cron-source \
   --target-dir ./tmp/crons \
   --only hourly/example.md
@@ -40,6 +43,7 @@ Apply and prune the whole target directory:
 
 ```bash
 openclaw-ops crons reconcile \
+  --host example-host \
   --source-dir ./test/fixtures/cron-source \
   --target-dir ./tmp/crons \
   --prune \

@@ -8,6 +8,7 @@ import type { ReconcileResult } from "./reconcilers/common.js";
 type PromptCliOptions = {
   agent?: string;
   runtime?: string;
+  host?: string;
   repo?: string;
   ref?: string;
   checkoutDir?: string;
@@ -24,6 +25,7 @@ type PromptCliOptions = {
 };
 
 type TreeCliOptions = {
+  host?: string;
   sourceDir?: string;
   targetDir?: string;
   apply?: boolean;
@@ -94,6 +96,7 @@ export function buildProgram(): Command {
     .command("reconcile")
     .description("Plan or apply prompt and support file changes for one runtime agent")
     .option("--agent <id>", "Target agent id", "main")
+    .option("--host <name>", "Target host label for audit output")
     .option(
       "--runtime <id>",
       "Rendered prompt runtime/user id; defaults to env/runtime username",
@@ -120,6 +123,7 @@ export function buildProgram(): Command {
         const result = await reconcilePrompts({
           agentId: opts.agent,
           runtimeId: opts.runtime,
+          hostId: opts.host,
           repository: opts.repo,
           ref: opts.ref,
           checkoutDir: opts.checkoutDir,
@@ -149,6 +153,7 @@ export function buildProgram(): Command {
   config
     .command("reconcile")
     .description("Plan or apply desired runtime config file changes")
+    .option("--host <name>", "Target host label for audit output")
     .requiredOption("--source-dir <path>", "Desired config directory")
     .requiredOption("--target-dir <path>", "Target OpenClaw config/runtime directory")
     .option("--apply", "Write changes instead of dry-running", false)
@@ -159,6 +164,7 @@ export function buildProgram(): Command {
         const result = await reconcileConfig({
           sourceDir: requireOption(opts.sourceDir, "--source-dir"),
           targetDir: requireOption(opts.targetDir, "--target-dir"),
+          hostId: opts.host,
           apply: Boolean(opts.apply),
           prune: Boolean(opts.prune),
         });
@@ -178,6 +184,7 @@ export function buildProgram(): Command {
   crons
     .command("reconcile")
     .description("Plan or apply desired cron artifact changes")
+    .option("--host <name>", "Target host label for audit output")
     .requiredOption("--source-dir <path>", "Desired cron artifact directory")
     .requiredOption("--target-dir <path>", "Target cron artifact directory")
     .option(
@@ -194,6 +201,7 @@ export function buildProgram(): Command {
         const result = await reconcileCrons({
           sourceDir: requireOption(opts.sourceDir, "--source-dir"),
           targetDir: requireOption(opts.targetDir, "--target-dir"),
+          hostId: opts.host,
           only: opts.only,
           apply: Boolean(opts.apply),
           prune: Boolean(opts.prune),

@@ -26,8 +26,9 @@ describe("config reconciler", () => {
     await writeFile(path.join(sourceDir, "config.json"), '{"desired":true}\n');
     await writeFile(path.join(targetDir, "config.json"), '{"desired":false}\n');
 
-    const plan = await reconcileConfig({ sourceDir, targetDir });
+    const plan = await reconcileConfig({ sourceDir, targetDir, hostId: "example-host" });
     expect(plan.applied).toBe(false);
+    expect(plan.target.hostId).toBe("example-host");
     expect(plan.changed.map((file) => `${file.action}:${file.kind}:${file.relativePath}`)).toEqual([
       "update:config:config.json",
     ]);
@@ -68,10 +69,12 @@ describe("cron reconciler", () => {
     const result = await reconcileCrons({
       sourceDir,
       targetDir,
+      hostId: "example-host",
       only: ["hourly/report.md"],
       prune: true,
     });
 
+    expect(result.target.hostId).toBe("example-host");
     expect(result.changed.map((file) => `${file.action}:${file.kind}:${file.relativePath}`)).toEqual([
       "update:cron:hourly/report.md",
     ]);

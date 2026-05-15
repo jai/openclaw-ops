@@ -23,6 +23,7 @@ Every reconciler is:
 
 - dry-run by default
 - explicit about source and target paths
+- host-aware in output through `--host` or `OPENCLAW_HOST`
 - JSON-friendly for automation logs
 - safe to run against one runtime target at a time
 - generic enough for public reuse
@@ -48,6 +49,7 @@ All reconcilers follow the same operating model:
 - `--json` emits scheduler-friendly machine output
 - `--prune` is required before deleting stale managed files
 - results include source metadata, target metadata, full file plan, and changed files
+- target metadata includes `hostId`; pass `--host`, set `OPENCLAW_HOST`, or use the local hostname default
 - missing or invalid desired state fails before mutation
 - no private repository, host, user, token, or credential defaults
 
@@ -75,6 +77,7 @@ one OpenClaw runtime agent.
 
 ```bash
 openclaw-ops prompts reconcile \
+  --host example-host \
   --runtime example-runtime \
   --agent main \
   --source-dir ./test/fixtures/prompt-source/agent-prompts/example-runtime/main \
@@ -86,6 +89,7 @@ Apply the same plan:
 
 ```bash
 openclaw-ops prompts reconcile \
+  --host example-host \
   --runtime example-runtime \
   --agent main \
   --source-dir ./test/fixtures/prompt-source/agent-prompts/example-runtime/main \
@@ -101,6 +105,7 @@ runtime should match it.
 
 ```bash
 openclaw-ops config reconcile \
+  --host example-host \
   --source-dir ./test/fixtures/config-source \
   --target-dir ./tmp/config \
   --json
@@ -110,6 +115,7 @@ Apply:
 
 ```bash
 openclaw-ops config reconcile \
+  --host example-host \
   --source-dir ./test/fixtures/config-source \
   --target-dir ./tmp/config \
   --apply
@@ -122,6 +128,7 @@ runtime. `--only` keeps partial rollouts narrow and ignores unrelated drift.
 
 ```bash
 openclaw-ops crons reconcile \
+  --host example-host \
   --source-dir ./test/fixtures/cron-source \
   --target-dir ./tmp/crons \
   --only hourly/example.md
@@ -131,6 +138,7 @@ Apply and prune the whole target directory:
 
 ```bash
 openclaw-ops crons reconcile \
+  --host example-host \
   --source-dir ./test/fixtures/cron-source \
   --target-dir ./tmp/crons \
   --prune \

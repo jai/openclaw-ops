@@ -10,6 +10,7 @@ belong in the source directory and where they should land on the runtime.
 
 - `--source-dir`: desired config directory
 - `--target-dir`: target config/runtime directory
+- `--host`: target host label for audit output
 - `--prune`: delete target files absent from source
 - `--apply`: write the plan
 - `--json`: emit machine-readable output
@@ -18,6 +19,7 @@ belong in the source directory and where they should land on the runtime.
 
 ```bash
 openclaw-ops config reconcile \
+  --host example-host \
   --source-dir ./test/fixtures/config-source \
   --target-dir ./tmp/config
 ```
@@ -26,6 +28,7 @@ Apply:
 
 ```bash
 openclaw-ops config reconcile \
+  --host example-host \
   --source-dir ./test/fixtures/config-source \
   --target-dir ./tmp/config \
   --apply

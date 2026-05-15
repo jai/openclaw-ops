@@ -6,6 +6,7 @@ import {
   isDirectory,
   listFilesRecursive,
   readSha256,
+  resolveHostId,
   resolveUserPath,
 } from "../fs-utils.js";
 
@@ -13,6 +14,7 @@ export type FileTreeReconcileOptions = {
   kind: string;
   sourceDir: string;
   targetDir: string;
+  hostId?: string;
   apply?: boolean;
   prune?: boolean;
   only?: string[];
@@ -21,6 +23,7 @@ export type FileTreeReconcileOptions = {
 
 export type FileTreeReconcileResult = ReconcileResult & {
   target: {
+    hostId: string;
     targetDir: string;
   };
   source: {
@@ -148,6 +151,7 @@ export async function reconcileFileTree(
   const env = options.env ?? process.env;
   const sourceDir = resolveUserPath(options.sourceDir, env);
   const targetDir = resolveUserPath(options.targetDir, env);
+  const hostId = resolveHostId(options.hostId, env);
   const files = await planFileTree({
     kind: options.kind,
     sourceDir,
@@ -164,7 +168,7 @@ export async function reconcileFileTree(
 
   return {
     applied: Boolean(options.apply),
-    target: { targetDir },
+    target: { hostId, targetDir },
     source: { sourceDir, only: options.only },
     files,
     changed,

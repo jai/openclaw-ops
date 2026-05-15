@@ -15,6 +15,7 @@ import {
   optionalString,
   pathExists,
   readSha256,
+  resolveHostId,
   resolveUserPath,
   runCommand,
 } from "../fs-utils.js";
@@ -29,6 +30,7 @@ const DEFAULT_BUNDLE_ROOT = "agent-prompts";
 export type PromptReconcileOptions = {
   agentId?: string;
   runtimeId?: string;
+  hostId?: string;
   repository?: string;
   ref?: string;
   checkoutDir?: string;
@@ -47,6 +49,7 @@ export type PromptReconcileOptions = {
 export type PromptReconcileDefaults = {
   agentId: string;
   runtimeId: string;
+  hostId: string;
   checkoutDir: string;
   bundleRoot: string;
   workspaceDir: string;
@@ -55,6 +58,7 @@ export type PromptReconcileDefaults = {
 
 export type PromptReconcileResult = ReconcileResult & {
   target: {
+    hostId: string;
     runtimeId: string;
     agentId: string;
     workspaceDir: string;
@@ -82,6 +86,7 @@ function normalizeRuntimeId(env: NodeJS.ProcessEnv): string {
 export function resolvePromptReconcileDefaults(options: {
   agentId?: string;
   runtimeId?: string;
+  hostId?: string;
   checkoutDir?: string;
   bundleRoot?: string;
   workspaceDir?: string;
@@ -93,6 +98,7 @@ export function resolvePromptReconcileDefaults(options: {
   const openclawDir = path.join(home, ".openclaw");
   const agentId = normalizeAgentId(options.agentId);
   const runtimeId = optionalString(options.runtimeId) ?? normalizeRuntimeId(env);
+  const hostId = resolveHostId(options.hostId, env);
   const checkoutDir =
     optionalString(options.checkoutDir) ??
     optionalString(env.OPENCLAW_PROMPTS_CHECKOUT_DIR) ??
@@ -113,6 +119,7 @@ export function resolvePromptReconcileDefaults(options: {
   return {
     agentId,
     runtimeId,
+    hostId,
     checkoutDir: resolveUserPath(checkoutDir, env),
     bundleRoot,
     workspaceDir: resolveUserPath(workspaceDir, env),
@@ -349,6 +356,7 @@ export async function reconcilePrompts(
   const defaults = resolvePromptReconcileDefaults({
     agentId: options.agentId,
     runtimeId: options.runtimeId,
+    hostId: options.hostId,
     checkoutDir: options.checkoutDir,
     bundleRoot: options.bundleRoot,
     workspaceDir: options.workspaceDir,
@@ -409,6 +417,7 @@ export async function reconcilePrompts(
   return {
     applied: apply,
     target: {
+      hostId: defaults.hostId,
       runtimeId: defaults.runtimeId,
       agentId: defaults.agentId,
       workspaceDir: defaults.workspaceDir,

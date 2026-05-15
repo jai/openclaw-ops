@@ -8,6 +8,7 @@ OpenClaw agent workspace.
 - `--source-dir`: already-rendered bundle directory for one runtime/agent
 - or `--repo` plus `--ref`: prompt source repository and ref
 - `--runtime`: runtime/user id used in source bundle paths
+- `--host`: target host label for audit output
 - `--agent`: OpenClaw agent id, default `main`
 - `--workspace-dir`: target agent workspace directory
 - `--support-dir`: target runtime support directory
@@ -35,6 +36,7 @@ Dry-run from a rendered bundle:
 
 ```bash
 openclaw-ops prompts reconcile \
+  --host example-host \
   --runtime example-runtime \
   --agent main \
   --source-dir ./test/fixtures/prompt-source/agent-prompts/example-runtime/main \
@@ -46,6 +48,7 @@ Apply the same plan:
 
 ```bash
 openclaw-ops prompts reconcile \
+  --host example-host \
   --runtime example-runtime \
   --agent main \
   --source-dir ./test/fixtures/prompt-source/agent-prompts/example-runtime/main \
@@ -58,6 +61,7 @@ Pull from a prompt source repository:
 
 ```bash
 openclaw-ops prompts reconcile \
+  --host example-host \
   --repo https://github.com/example/openclaw-prompts.git \
   --ref main \
   --runtime example-runtime \
