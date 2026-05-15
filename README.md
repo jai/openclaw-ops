@@ -1,24 +1,84 @@
 # openclaw-ops
 
-Operational reconcilers for OpenClaw runtimes.
+Small, deterministic reconcilers for OpenClaw runtime operations.
 
-This repo is intentionally generic and public-safe. It contains reusable
-reconciler code and examples, not private prompt content, fleet inventory,
-hostnames, credentials, or organization-specific deployment policy.
+`openclaw-ops` is the public-safe tooling layer around OpenClaw runtimes. It
+does not contain private prompts, fleet inventory, hostnames, credentials, or
+organization policy. Those live in the prompt and infrastructure repositories
+that call these reconcilers.
 
-## What belongs here
+## Reconciler Index
 
-- Deterministic plan/apply reconcilers for OpenClaw runtime files.
-- CLI and library code with JSON output for scheduled automation.
-- Generic examples and fixtures with placeholder data.
-- Tests for scope handling, dry-run behavior, pruning, and clear failures.
+### Prompt Files
 
-## What does not belong here
+Sync rendered agent prompt bundles into one OpenClaw agent workspace.
 
-- Real prompt bundles or operator instructions.
-- Runtime hostnames, usernames, or managed-user inventory.
-- Tokens, deploy keys, 1Password paths, or private repository defaults.
-- Organization policy that belongs in an infra repo.
+- CLI: `openclaw-ops prompts reconcile`
+- Source: [src/reconcilers/prompts.ts](src/reconcilers/prompts.ts)
+- Tests: [test/prompts-reconciler.test.ts](test/prompts-reconciler.test.ts)
+- Docs: [docs/reconcilers/prompts.md](docs/reconcilers/prompts.md)
+- Manages: `AGENTS.md`, `SOUL.md`, `TOOLS.md`, `IDENTITY.md`, optional `USER.md`, and `support/` files
+
+```bash
+openclaw-ops prompts reconcile \
+  --runtime example-runtime \
+  --agent main \
+  --source-dir ./test/fixtures/prompt-source/agent-prompts/example-runtime/main \
+  --workspace-dir ./tmp/workspace \
+  --support-dir ./tmp/runtime/example-runtime
+```
+
+### Runtime Config
+
+Sync a desired config file tree into one runtime config directory.
+
+- CLI: `openclaw-ops config reconcile`
+- Source: [src/reconcilers/config.ts](src/reconcilers/config.ts)
+- Shared engine: [src/reconcilers/tree.ts](src/reconcilers/tree.ts)
+- Tests: [test/config-crons-reconciler.test.ts](test/config-crons-reconciler.test.ts)
+- Docs: [docs/reconcilers/config.md](docs/reconcilers/config.md)
+- Manages: caller-selected config files such as `config.json`, model profiles, runtime metadata, or generated desired-config fragments
+
+```bash
+openclaw-ops config reconcile \
+  --source-dir ./test/fixtures/config-source \
+  --target-dir ./tmp/config
+```
+
+### Cron Artifacts
+
+Sync desired cron artifacts into one runtime cron directory. The cron reconciler
+supports hard scoping with repeated `--only` flags, so schedulers can update
+selected cron files without touching unrelated drift.
+
+- CLI: `openclaw-ops crons reconcile`
+- Source: [src/reconcilers/crons.ts](src/reconcilers/crons.ts)
+- Shared engine: [src/reconcilers/tree.ts](src/reconcilers/tree.ts)
+- Tests: [test/config-crons-reconciler.test.ts](test/config-crons-reconciler.test.ts)
+- Docs: [docs/reconcilers/crons.md](docs/reconcilers/crons.md)
+- Manages: caller-rendered cron definitions, schedules, or launcher artifacts
+
+```bash
+openclaw-ops crons reconcile \
+  --source-dir ./test/fixtures/cron-source \
+  --target-dir ./tmp/crons \
+  --only hourly/example.md
+```
+
+## Common Behavior
+
+Every reconciler follows the same operational contract:
+
+- dry-run by default
+- explicit `--apply` before mutation
+- `--json` for scheduler logs and automation
+- clear source and target metadata in every result
+- deterministic file plans with `create`, `update`, `delete`, and `unchanged`
+- pruning/deletion is opt-in with `--prune`
+- no private repository, host, user, or credential defaults
+
+See [docs/reconciler-contract.md](docs/reconciler-contract.md) for the detailed
+contract.
 
 ## Install
 
@@ -30,7 +90,7 @@ npm run build
 npm link
 ```
 
-For one-off use without linking:
+One-off without linking:
 
 ```bash
 npm install
@@ -38,87 +98,54 @@ npm run build
 node dist/cli.js --help
 ```
 
-## Prompt Reconciler
+## Apply Changes
 
-`openclaw-ops prompts reconcile` compares a rendered prompt bundle with one
-OpenClaw runtime agent workspace and optionally applies the difference.
-
-It manages:
-
-- required prompt files: `AGENTS.md`, `SOUL.md`, `TOOLS.md`, `IDENTITY.md`
-- optional prompt file: `USER.md`
-- support files under `support/`, copied to a runtime support directory
-
-Dry-run is the default. Use `--apply` to write changes. Deleting stale managed
-files is opt-in with `--prune`.
-
-### Use a rendered bundle directory
+Dry-run first:
 
 ```bash
-openclaw-ops prompts reconcile \
-  --runtime example-runtime \
-  --agent main \
-  --source-dir ./test/fixtures/prompt-source/agent-prompts/example-runtime/main \
-  --workspace-dir ./tmp/workspace \
-  --support-dir ./tmp/runtime/example-runtime
-```
-
-Apply the same plan:
-
-```bash
-openclaw-ops prompts reconcile \
-  --runtime example-runtime \
-  --agent main \
-  --source-dir ./test/fixtures/prompt-source/agent-prompts/example-runtime/main \
-  --workspace-dir ./tmp/workspace \
-  --support-dir ./tmp/runtime/example-runtime \
-  --apply
-```
-
-### Pull from a prompt source repo
-
-```bash
-openclaw-ops prompts reconcile \
-  --repo https://github.com/example/openclaw-prompts.git \
-  --ref main \
-  --runtime example-runtime \
-  --agent main
-```
-
-When a checkout has `scripts/render-openclaw-prompts.mjs`, the reconciler runs
-it before reading rendered files. Use `--no-render` to skip that step.
-
-### JSON output for schedulers
-
-```bash
-openclaw-ops prompts reconcile \
-  --source-dir ./test/fixtures/prompt-source/agent-prompts/example-runtime/main \
-  --runtime example-runtime \
+openclaw-ops config reconcile \
+  --source-dir ./test/fixtures/config-source \
+  --target-dir ./tmp/config \
   --json
 ```
 
-The JSON includes:
+Then apply:
 
-- source metadata: source directory, repo/ref when used, bundle root
-- target metadata: runtime id, agent id, workspace dir, support dir
-- full file plan and changed file subset
-- git/render command steps executed
+```bash
+openclaw-ops config reconcile \
+  --source-dir ./test/fixtures/config-source \
+  --target-dir ./tmp/config \
+  --apply
+```
 
-## Reconciler Contract
+Delete stale managed files only when requested:
 
-All reconcilers in this repo should follow the same contract:
+```bash
+openclaw-ops crons reconcile \
+  --source-dir ./test/fixtures/cron-source \
+  --target-dir ./tmp/crons \
+  --prune \
+  --apply
+```
 
-- dry-run by default
-- explicit `--apply` for mutations
-- deterministic plan output
-- `--json` for automation
-- clear source and target metadata
-- no private defaults
-- pruning/deletion is opt-in
-- tests cover plan/apply/failure behavior
+## Repository Boundary
 
-See [docs/reconciler-contract.md](docs/reconciler-contract.md) for the detailed
-contract used by future reconcilers.
+This repo should stay generic.
+
+Allowed:
+
+- reconciler engines
+- CLI wrappers
+- public-safe fixtures
+- examples with placeholder paths
+- tests and docs for generic behavior
+
+Not allowed:
+
+- real prompt bundles or operator instructions
+- runtime hostnames, usernames, or managed-user inventory
+- tokens, deploy keys, 1Password paths, or private repository defaults
+- organization-specific reviewer, CI, or merge policy
 
 ## Development
 
@@ -127,4 +154,4 @@ npm install
 npm run verify
 ```
 
-Build output is written to `dist/`.
+CI runs the same verification on every push and pull request.

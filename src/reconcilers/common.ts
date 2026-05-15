@@ -20,7 +20,7 @@ export type CommandStep = {
 export type ReconcileResult = {
   applied: boolean;
   target: Record<string, string>;
-  source: Record<string, string | undefined>;
+  source: Record<string, string | string[] | undefined>;
   files: ReconcileChange[];
   changed: ReconcileChange[];
   steps: CommandStep[];

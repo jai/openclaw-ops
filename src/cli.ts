@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 import { Command } from "commander";
+import { reconcileConfig } from "./reconcilers/config.js";
+import { reconcileCrons } from "./reconcilers/crons.js";
 import { reconcilePrompts, type PromptReconcileResult } from "./reconcilers/prompts.js";
+import type { ReconcileResult } from "./reconcilers/common.js";
 
 type PromptCliOptions = {
   agent?: string;
@@ -20,11 +23,23 @@ type PromptCliOptions = {
   json?: boolean;
 };
 
+type TreeCliOptions = {
+  sourceDir?: string;
+  targetDir?: string;
+  apply?: boolean;
+  prune?: boolean;
+  json?: boolean;
+};
+
+type CronCliOptions = TreeCliOptions & {
+  only?: string[];
+};
+
 function formatPathList(paths: string[]): string {
   return paths.length === 0 ? "none" : paths.join(", ");
 }
 
-export function formatPromptResult(result: PromptReconcileResult): string {
+export function formatResult(result: ReconcileResult, label: string): string {
   const changed = result.changed;
   const created = changed
     .filter((file) => file.action === "create")
@@ -36,11 +51,14 @@ export function formatPromptResult(result: PromptReconcileResult): string {
     .filter((file) => file.action === "delete")
     .map((file) => `${file.kind}:${file.relativePath}`);
   const mode = result.applied ? "applied" : "dry-run";
+  const targetLines = Object.entries(result.target).map(([key, value]) => `${key}: ${value}`);
+  const sourceLines = Object.entries(result.source)
+    .filter(([, value]) => value !== undefined)
+    .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(", ") : value}`);
   const lines = [
-    `Prompt reconcile ${mode} for ${result.target.runtimeId}/${result.target.agentId}`,
-    `source: ${result.source.sourceDir}`,
-    `workspace: ${result.target.workspaceDir}`,
-    `support: ${result.target.supportDir}`,
+    `${label} reconcile ${mode}`,
+    ...sourceLines,
+    ...targetLines,
     `created: ${formatPathList(created)}`,
     `updated: ${formatPathList(updated)}`,
     `deleted: ${formatPathList(deleted)}`,
@@ -49,6 +67,17 @@ export function formatPromptResult(result: PromptReconcileResult): string {
     lines.push("run with --apply to write these changes");
   }
   return lines.join("\n");
+}
+
+export function formatPromptResult(result: PromptReconcileResult): string {
+  return formatResult(result, `Prompt ${result.target.runtimeId}/${result.target.agentId}`);
+}
+
+function requireOption(value: string | undefined, name: string): string {
+  if (!value?.trim()) {
+    throw new Error(`Missing required option: ${name}`);
+  }
+  return value;
 }
 
 export function buildProgram(): Command {
@@ -106,6 +135,71 @@ export function buildProgram(): Command {
         });
         process.stdout.write(
           opts.json ? `${JSON.stringify(result, null, 2)}\n` : `${formatPromptResult(result)}\n`,
+        );
+      } catch (err) {
+        process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
+        process.exitCode = 1;
+      }
+    });
+
+  const config = program
+    .command("config")
+    .description("Reconcile desired runtime config files into a target config directory");
+
+  config
+    .command("reconcile")
+    .description("Plan or apply desired runtime config file changes")
+    .requiredOption("--source-dir <path>", "Desired config directory")
+    .requiredOption("--target-dir <path>", "Target OpenClaw config/runtime directory")
+    .option("--apply", "Write changes instead of dry-running", false)
+    .option("--prune", "Delete target files absent from the source", false)
+    .option("--json", "Output JSON", false)
+    .action(async (opts: TreeCliOptions) => {
+      try {
+        const result = await reconcileConfig({
+          sourceDir: requireOption(opts.sourceDir, "--source-dir"),
+          targetDir: requireOption(opts.targetDir, "--target-dir"),
+          apply: Boolean(opts.apply),
+          prune: Boolean(opts.prune),
+        });
+        process.stdout.write(
+          opts.json ? `${JSON.stringify(result, null, 2)}\n` : `${formatResult(result, "Config")}\n`,
+        );
+      } catch (err) {
+        process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
+        process.exitCode = 1;
+      }
+    });
+
+  const crons = program
+    .command("crons")
+    .description("Reconcile desired cron artifacts into a target cron directory");
+
+  crons
+    .command("reconcile")
+    .description("Plan or apply desired cron artifact changes")
+    .requiredOption("--source-dir <path>", "Desired cron artifact directory")
+    .requiredOption("--target-dir <path>", "Target cron artifact directory")
+    .option(
+      "--only <path>",
+      "Limit reconciliation to one source-relative cron artifact; repeat for multiple files",
+      (value, previous: string[] = []) => [...previous, value],
+      [],
+    )
+    .option("--apply", "Write changes instead of dry-running", false)
+    .option("--prune", "Delete target files absent from the source when not using --only", false)
+    .option("--json", "Output JSON", false)
+    .action(async (opts: CronCliOptions) => {
+      try {
+        const result = await reconcileCrons({
+          sourceDir: requireOption(opts.sourceDir, "--source-dir"),
+          targetDir: requireOption(opts.targetDir, "--target-dir"),
+          only: opts.only,
+          apply: Boolean(opts.apply),
+          prune: Boolean(opts.prune),
+        });
+        process.stdout.write(
+          opts.json ? `${JSON.stringify(result, null, 2)}\n` : `${formatResult(result, "Crons")}\n`,
         );
       } catch (err) {
         process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);

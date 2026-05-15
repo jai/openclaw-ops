@@ -5,6 +5,21 @@ export type {
   ReconcileResult,
 } from "./reconcilers/common.js";
 export {
+  reconcileConfig,
+  type ConfigReconcileOptions,
+  type ConfigReconcileResult,
+} from "./reconcilers/config.js";
+export {
+  reconcileCrons,
+  type CronReconcileOptions,
+  type CronReconcileResult,
+} from "./reconcilers/crons.js";
+export {
+  reconcileFileTree,
+  type FileTreeReconcileOptions,
+  type FileTreeReconcileResult,
+} from "./reconcilers/tree.js";
+export {
   MANAGED_PROMPT_FILES,
   OPTIONAL_PROMPT_FILES,
   REQUIRED_PROMPT_FILES,
