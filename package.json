@@ -1,0 +1,40 @@
+{
+  "name": "openclaw-ops",
+  "version": "0.1.0",
+  "description": "Operational reconcilers for OpenClaw runtimes.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jai/openclaw-ops.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jai/openclaw-ops/issues"
+  },
+  "homepage": "https://github.com/jai/openclaw-ops#readme",
+  "bin": {
+    "openclaw-ops": "./dist/cli.js"
+  },
+  "files": [
+    "dist/",
+    "README.md",
+    "docs/"
+  ],
+  "engines": {
+    "node": ">=22.16"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "verify": "npm run check && npm test"
+  },
+  "dependencies": {
+    "commander": "^14.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.14"
+  }
+}
